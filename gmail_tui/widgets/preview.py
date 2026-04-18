@@ -59,6 +59,8 @@ class Preview(VerticalScroll):
     Preview .pv-body {
         height: auto;
         padding: 1 0;
+    }
+    Preview .pv-body, Preview .pv-body * {
         link-style: not underline;
         link-color: $text;
         link-background: transparent;
