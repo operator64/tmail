@@ -96,67 +96,29 @@ class Preview(VerticalScroll):
                 Markdown(m.body_text.strip() or "(no text body)", classes="pv-body"),
             ]
             if m.attachments:
-                widgets.append(self._attachment_block(m.attachments))
+                widgets.append(_AttachmentBlock(m.attachments))
             return widgets
 
         self._swap(build)
 
-    def _attachment_block(self, atts: list[Attachment]) -> VerticalScroll:
-        container = VerticalScroll(classes="pv-atts")
-
-        def populate():
-            container.mount(Label("**Attachments:**"))
-            for a in atts:
-                group = Vertical()
-                group.att = a  # type: ignore[attr-defined]
-                group.image_mounted = False  # type: ignore[attr-defined]
-                container.mount(group)
-                row = Horizontal(classes="attachment-row")
-                group.mount(row)
-                row.mount(Label(f"• {a.filename}  ({_fmt_size(a.size)})"))
-                is_image = a.mime_type.startswith(IMAGE_MIME_PREFIXES)
-                if is_image and _TxImage is not None:
-                    btn_preview = Button("Preview", variant="default")
-                    btn_preview.att = a  # type: ignore[attr-defined]
-                    btn_preview.action = "inline"  # type: ignore[attr-defined]
-                    btn_preview.group = group  # type: ignore[attr-defined]
-                    row.mount(btn_preview)
-                btn = Button("Download", variant="primary")
-                btn.att = a  # type: ignore[attr-defined]
-                btn.action = "download"  # type: ignore[attr-defined]
-                row.mount(btn)
-
-        container._populate = populate  # type: ignore[attr-defined]
-        return container
-
     def render_inline_image(self, attachment: Attachment, data: bytes) -> None:
         if _TxImage is None:
             return
-        # find the right group by attachment id
-        for child in list(self.query(".pv-atts")):
-            for group in child.children:
-                att = getattr(group, "att", None)
-                if att is None or att.attachment_id != attachment.attachment_id:
-                    continue
-                if getattr(group, "image_mounted", False):
-                    return
-                try:
-                    img = _TxImage(io.BytesIO(data), classes="attachment-image")
-                    group.mount(img)
-                    group.image_mounted = True  # type: ignore[attr-defined]
-                except Exception:
-                    log.exception("inline image render failed")
+        for row in self.query(_AttachmentRow):
+            if row.attachment.attachment_id == attachment.attachment_id:
+                row.mount_image(data)
                 return
 
     def _swap(self, builder) -> None:
         """Safely replace all children with the output of builder(), awaiting removal."""
 
         async def do():
-            await self.remove_children()
-            for w in builder():
-                await self.mount(w)
-                if hasattr(w, "_populate"):
-                    w._populate()
+            try:
+                await self.remove_children()
+                for w in builder():
+                    await self.mount(w)
+            except Exception:
+                log.exception("preview swap failed")
 
         self.app.call_later(do)
 
@@ -169,6 +131,58 @@ class Preview(VerticalScroll):
             self.post_message(AttachmentInlineImageRequested(att))
         else:
             self.post_message(AttachmentDownloadRequested(att))
+
+
+class _AttachmentRow(Vertical):
+    DEFAULT_CSS = """
+    _AttachmentRow { height: auto; }
+    _AttachmentRow Horizontal { height: auto; }
+    _AttachmentRow Button { margin-left: 2; }
+    """
+
+    def __init__(self, attachment: Attachment) -> None:
+        super().__init__()
+        self.attachment = attachment
+        self._image_mounted = False
+
+    def compose(self) -> ComposeResult:
+        a = self.attachment
+        with Horizontal(classes="attachment-row"):
+            yield Label(f"• {a.filename}  ({_fmt_size(a.size)})")
+            if a.mime_type.startswith(IMAGE_MIME_PREFIXES) and _TxImage is not None:
+                btn_preview = Button("Preview")
+                btn_preview.att = a  # type: ignore[attr-defined]
+                btn_preview.action = "inline"  # type: ignore[attr-defined]
+                yield btn_preview
+            btn = Button("Download", variant="primary")
+            btn.att = a  # type: ignore[attr-defined]
+            btn.action = "download"  # type: ignore[attr-defined]
+            yield btn
+
+    def mount_image(self, data: bytes) -> None:
+        if self._image_mounted or _TxImage is None:
+            return
+        try:
+            img = _TxImage(io.BytesIO(data), classes="attachment-image")
+            self.mount(img)
+            self._image_mounted = True
+        except Exception:
+            log.exception("inline image render failed")
+
+
+class _AttachmentBlock(VerticalScroll):
+    DEFAULT_CSS = """
+    _AttachmentBlock { height: auto; padding: 1 0; border-top: solid $accent; }
+    """
+
+    def __init__(self, attachments: list[Attachment]) -> None:
+        super().__init__(classes="pv-atts")
+        self._attachments = attachments
+
+    def compose(self) -> ComposeResult:
+        yield Label("Attachments:")
+        for a in self._attachments:
+            yield _AttachmentRow(a)
 
 
 def default_download_dir() -> Path:
