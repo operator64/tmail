@@ -212,7 +212,7 @@ class Cache:
             raise
 
     def get_summaries_by_label(
-        self, label_id: str, limit: int = 200
+        self, label_id: str, limit: int = 2000
     ) -> list[MessageSummary]:
         rows = self._conn().execute(
             "SELECT * FROM messages WHERE labels_json LIKE ? "

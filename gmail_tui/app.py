@@ -916,8 +916,12 @@ class GmailTUIApp(App):
     # ---------------- Refresh ----------------
 
     def action_refresh_inbox(self) -> None:
-        if self._current_label:
-            self._load_label_messages(self._current_label, self._current_query)
+        # Full reload (set_summaries + first-page fetch) would drop any
+        # further pages the user had scrolled through. Use the history
+        # API instead — it picks up only real deltas.
+        self.sync_text = "Refreshing…"
+        self._update_sync_label()
+        self._poll_history()
         self._refresh_labels_worker()
 
     def action_help(self) -> None:
