@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+build/
+dist/
+
+# Virtualenvs
+.venv/
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+.claude/
+*.swp
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Secrets / user-specific (never commit)
+credentials.json
+token.json
+account.json
+*.sqlite
+*.db
+
+# Logs
+*.log
+log.txt

@@ -1,0 +1,57 @@
+Screen {
+    layout: vertical;
+    background: $background;
+}
+
+#header-bar {
+    height: 1;
+    background: $primary 20%;
+    padding: 0 1;
+    color: $text;
+}
+
+#header-bar #header-account { width: 30%; }
+#header-bar #header-sync    { width: 25%; content-align: center middle; }
+#header-bar #header-search  { width: 1fr; }
+#header-bar #header-help    { width: 3; content-align: right middle; }
+
+#main {
+    layout: horizontal;
+    height: 1fr;
+}
+
+#sidebar-pane {
+    width: 22%;
+    border-right: solid $accent 30%;
+    background: $surface;
+}
+
+#list-pane {
+    width: 38%;
+    border-right: solid $accent 30%;
+}
+
+#preview-pane {
+    width: 1fr;
+}
+
+#footer-bar {
+    height: 1;
+    background: $primary 20%;
+    color: $text;
+    padding: 0 1;
+}
+
+.badge-offline {
+    background: $error;
+    color: $text;
+    padding: 0 1;
+}
+
+.badge-online {
+    background: $success;
+    color: $text;
+    padding: 0 1;
+}
+
+Input { border: none; }
