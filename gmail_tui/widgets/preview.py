@@ -56,7 +56,15 @@ class Preview(VerticalScroll):
     DEFAULT_CSS = """
     Preview { padding: 0 1; }
     Preview .pv-headers { height: auto; padding: 1 0; border-bottom: solid $accent; }
-    Preview .pv-body { height: auto; padding: 1 0; }
+    Preview .pv-body {
+        height: auto;
+        padding: 1 0;
+        link-style: not underline;
+        link-color: $text;
+        link-background: transparent;
+        link-style-hover: underline;
+        link-color-hover: $accent;
+    }
     Preview .pv-atts { height: auto; padding: 1 0; border-top: solid $accent; }
     Preview .attachment-row { height: auto; padding: 0; }
     Preview .attachment-row Button { margin-left: 2; }
