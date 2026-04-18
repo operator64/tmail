@@ -41,7 +41,12 @@ from .widgets.message_list import (
     MessageOpened,
     SelectionChanged,
 )
-from .widgets.preview import AttachmentDownloadRequested, Preview, default_download_dir
+from .widgets.preview import (
+    AttachmentDownloadRequested,
+    AttachmentInlineImageRequested,
+    Preview,
+    default_download_dir,
+)
 from .widgets.sidebar import LabelSelected, Sidebar
 
 log = logging.getLogger(__name__)
@@ -809,6 +814,26 @@ class GmailTUIApp(App):
         self, event: AttachmentDownloadRequested
     ) -> None:
         self.run_worker(self._download_attachment(event.attachment), thread=True, group="attachments")
+
+    def on_attachment_inline_image_requested(
+        self, event: AttachmentInlineImageRequested
+    ) -> None:
+        self.run_worker(
+            self._fetch_and_inline_image(event.attachment),
+            thread=True,
+            group="attachments",
+        )
+
+    def _fetch_and_inline_image(self, att):
+        def run():
+            if not self._client:
+                return
+            try:
+                data = self._client.get_attachment(att.message_id, att.attachment_id)
+                self.call_from_thread(self.query_one(Preview).render_inline_image, att, data)
+            except Exception:
+                log.exception("inline image fetch failed")
+        return run
 
     def _download_attachment(self, att):
         def run():

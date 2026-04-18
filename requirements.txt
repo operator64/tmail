@@ -5,3 +5,4 @@ google-auth-httplib2>=0.2.0
 html2text>=2024.2.26
 rapidfuzz>=3.6.0
 keyring>=24.3.0
+textual-image>=0.12.0
