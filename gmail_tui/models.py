@@ -61,6 +61,7 @@ class MessageSummary:
     snippet: str
     date: Optional[datetime]
     labels: list[str] = field(default_factory=list)
+    has_attachment: bool = False
 
     @property
     def is_unread(self) -> bool:

@@ -84,6 +84,7 @@ class MessageList(DataTable):
 
     def on_mount(self) -> None:
         self.add_column("★", width=2, key="star")
+        self.add_column("📎", width=2, key="att")
         self.add_column("Date", width=9, key="date")
         self.add_column("From", width=18, key="from")
         self.add_column("Subject", key="subject")
@@ -138,9 +139,10 @@ class MessageList(DataTable):
         try:
             cells = self._render_row(m)
             self.update_cell(m.id, "star", cells[0])
-            self.update_cell(m.id, "date", cells[1])
-            self.update_cell(m.id, "from", cells[2])
-            self.update_cell(m.id, "subject", cells[3])
+            self.update_cell(m.id, "att", cells[1])
+            self.update_cell(m.id, "date", cells[2])
+            self.update_cell(m.id, "from", cells[3])
+            self.update_cell(m.id, "subject", cells[4])
         except Exception:
             pass
 
@@ -155,11 +157,12 @@ class MessageList(DataTable):
         except Exception:
             pass
 
-    def _render_row(self, m: MessageSummary) -> tuple[Text, Text, Text, Text]:
+    def _render_row(self, m: MessageSummary) -> tuple[Text, Text, Text, Text, Text]:
         bold = m.is_unread
         style = "bold" if bold else "dim"
         sel_marker = "●" if m.id in self._selected else ""
         star = Text("★" if m.is_starred else " ", style="yellow" if m.is_starred else "")
+        att = Text("📎" if m.has_attachment else " ", style=style)
         date_col = Text(_fmt_date(m.date), style=style)
         from_col = Text(_elide(_short_from(m.from_addr), 16) + " " + sel_marker, style=style)
         subj = m.subject or "(no subject)"
@@ -168,7 +171,7 @@ class MessageList(DataTable):
         if snip:
             combined = f"{subj}  —  {snip}"
         subject_col = Text(combined, style=style, overflow="ellipsis", no_wrap=True)
-        return star, date_col, from_col, subject_col
+        return star, att, date_col, from_col, subject_col
 
     # ---------------- interaction ----------------
 

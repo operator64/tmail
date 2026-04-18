@@ -194,7 +194,7 @@ class GmailClient:
                     userId="me",
                     id=mid,
                     format="metadata",
-                    metadataHeaders=["From", "Subject", "Date"],
+                    metadataHeaders=["From", "Subject", "Date", "Content-Type"],
                 )
             )
         _retryable(lambda: batch.execute())
@@ -383,6 +383,8 @@ def _parse_date(raw: Optional[str]) -> Optional[datetime]:
 def _parse_metadata(raw: dict) -> MessageSummary:
     payload = raw.get("payload", {}) or {}
     headers = _header_map(payload)
+    content_type = headers.get("Content-Type", "").lower()
+    has_att = "multipart/mixed" in content_type
     return MessageSummary(
         id=raw["id"],
         thread_id=raw["threadId"],
@@ -391,6 +393,7 @@ def _parse_metadata(raw: dict) -> MessageSummary:
         snippet=raw.get("snippet", ""),
         date=_parse_date(headers.get("Date")),
         labels=list(raw.get("labelIds", [])),
+        has_attachment=has_att,
     )
 
 

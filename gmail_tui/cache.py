@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS messages (
     labels_json TEXT NOT NULL,
     is_unread INTEGER NOT NULL DEFAULT 0,
     is_starred INTEGER NOT NULL DEFAULT 0,
+    has_attachment INTEGER NOT NULL DEFAULT 0,
     fetched_at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_messages_thread ON messages(thread_id);
@@ -115,6 +116,12 @@ class Cache:
         with self._init_lock:
             conn = self._conn()
             conn.executescript(SCHEMA)
+            # Migrations
+            cols = {r["name"] for r in conn.execute("PRAGMA table_info(messages)").fetchall()}
+            if "has_attachment" not in cols:
+                conn.execute(
+                    "ALTER TABLE messages ADD COLUMN has_attachment INTEGER NOT NULL DEFAULT 0"
+                )
 
     def close(self) -> None:
         conn = getattr(self._local, "conn", None)
@@ -172,11 +179,12 @@ class Cache:
     def upsert_message_summary(self, m: MessageSummary) -> None:
         self._conn().execute(
             "INSERT INTO messages(id,thread_id,from_addr,subject,snippet,date,labels_json,"
-            "is_unread,is_starred,fetched_at) VALUES(?,?,?,?,?,?,?,?,?,?) "
+            "is_unread,is_starred,has_attachment,fetched_at) VALUES(?,?,?,?,?,?,?,?,?,?,?) "
             "ON CONFLICT(id) DO UPDATE SET thread_id=excluded.thread_id, "
             "from_addr=excluded.from_addr, subject=excluded.subject, snippet=excluded.snippet, "
             "date=excluded.date, labels_json=excluded.labels_json, is_unread=excluded.is_unread, "
-            "is_starred=excluded.is_starred, fetched_at=excluded.fetched_at",
+            "is_starred=excluded.is_starred, has_attachment=excluded.has_attachment, "
+            "fetched_at=excluded.fetched_at",
             (
                 m.id,
                 m.thread_id,
@@ -187,6 +195,7 @@ class Cache:
                 json.dumps(m.labels),
                 1 if m.is_unread else 0,
                 1 if m.is_starred else 0,
+                1 if m.has_attachment else 0,
                 _iso(datetime.now(timezone.utc)),
             ),
         )
@@ -219,6 +228,11 @@ class Cache:
         return self._row_to_summary(row) if row else None
 
     def _row_to_summary(self, row: sqlite3.Row) -> MessageSummary:
+        has_att = False
+        try:
+            has_att = bool(row["has_attachment"])
+        except (IndexError, KeyError):
+            pass
         return MessageSummary(
             id=row["id"],
             thread_id=row["thread_id"],
@@ -227,6 +241,7 @@ class Cache:
             snippet=row["snippet"] or "",
             date=_parse_iso(row["date"]),
             labels=json.loads(row["labels_json"] or "[]"),
+            has_attachment=has_att,
         )
 
     def update_message_labels(
@@ -266,11 +281,12 @@ class Cache:
         try:
             conn.execute(
                 "INSERT INTO messages(id,thread_id,from_addr,subject,snippet,date,labels_json,"
-                "is_unread,is_starred,fetched_at) VALUES(?,?,?,?,?,?,?,?,?,?) "
+                "is_unread,is_starred,has_attachment,fetched_at) VALUES(?,?,?,?,?,?,?,?,?,?,?) "
                 "ON CONFLICT(id) DO UPDATE SET thread_id=excluded.thread_id, "
                 "from_addr=excluded.from_addr, subject=excluded.subject, snippet=excluded.snippet, "
                 "date=excluded.date, labels_json=excluded.labels_json, is_unread=excluded.is_unread, "
-                "is_starred=excluded.is_starred, fetched_at=excluded.fetched_at",
+                "is_starred=excluded.is_starred, has_attachment=excluded.has_attachment, "
+                "fetched_at=excluded.fetched_at",
                 (
                     m.id,
                     m.thread_id,
@@ -281,6 +297,7 @@ class Cache:
                     json.dumps(m.labels),
                     1 if "UNREAD" in m.labels else 0,
                     1 if "STARRED" in m.labels else 0,
+                    1 if m.attachments else 0,
                     _iso(datetime.now(timezone.utc)),
                 ),
             )
