@@ -881,10 +881,12 @@ class GmailTUIApp(App):
         self._adjust_pane_width("#sidebar-pane", +2)
 
     def action_preview_shrink(self) -> None:
-        self._adjust_pane_width("#preview-pane", -2)
+        # growing list pane = preview's left border moves right → preview shrinks
+        self._adjust_pane_width("#list-pane", +2)
 
     def action_preview_grow(self) -> None:
-        self._adjust_pane_width("#preview-pane", +2)
+        # shrinking list pane = preview's left border moves left → preview grows
+        self._adjust_pane_width("#list-pane", -2)
 
     # ---------------- Refresh ----------------
 
