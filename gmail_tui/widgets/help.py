@@ -16,7 +16,7 @@ HELP_TEXT = """\
 - `Enter`           — open message
 - `Tab`             — change pane focus
 - `[` / `]`         — shrink / grow sidebar
-- `{` / `}`         — shrink / grow preview
+- `{` / `}`         — grow / shrink preview
 
 ## Actions
 - `c`               — new mail

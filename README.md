@@ -73,7 +73,7 @@ See `?` in-app, or:
 | `/` | Search (Gmail query syntax) |
 | `Ctrl+R` | Refresh current folder |
 | `[` / `]` | Shrink / grow sidebar |
-| `{` / `}` | Shrink / grow preview |
+| `{` / `}` | Grow / shrink preview |
 | `Space` | Multi-select toggle |
 | `?` | Help overlay |
 | `q` | Quit |
